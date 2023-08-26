@@ -67,8 +67,8 @@ class Tuner:
             y_train, y_validation = y_dev.iloc[train_index], y_dev.iloc[validation_index]
 
             # Initialize the model
-            pipeline = models.create_model(self.model_type,
-                                           hp_combination)
+            pipeline = create_model(self.model_type,
+                                    hp_combination)
             # Start a timer to time the process
             start_time = time.time()
 
