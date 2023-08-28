@@ -21,6 +21,6 @@ def create_model(model_type, hp_combination):
         # Create a pipeline with the feature selector and the random forest
         pipeline = Pipeline(steps = [('Feature Selector', FeatureSelector),('Model', RF)])
     else:
-        raise('Modelo não suportado...')
+        raise(ValueError('Modelo não suportado'))
     
     return pipeline

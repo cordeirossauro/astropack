@@ -13,3 +13,4 @@ CORRECTIONS = {'JPLUS': [f'Ax_{x}' for x in FILTERS['JPLUS']]}
 from . import preprocess
 from . import tuning
 from . import models
+from . import evaluation

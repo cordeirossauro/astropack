@@ -52,7 +52,7 @@ class Tuner:
 
         n_features, n_trees, min_samples_leaf, bootstrap, max_features = hp_combination
 
-        filename = f'results/rf_tuning_{self.mag_type}_{self.param_name}_id{self.tuning_id}.csv'
+        filename = f'results/rf_tuning_{self.mag_type}_{self.param_name}_{self.tuning_id}.csv'
 
         x_dev = pd.read_csv(f'temp_dataframes/x_dev_{self.mag_type}_{self.tuning_id}.csv', index_col = 0)
         y_dev = pd.read_csv(f'temp_dataframes/y_dev_{self.mag_type}_{self.tuning_id}.csv', index_col = 0)[self.param_name]
