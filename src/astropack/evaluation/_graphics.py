@@ -6,11 +6,13 @@ import numpy as np
 
 from math import log10, floor
 
-label_fontdict = {"family": "sans-serif", "weight": "normal", "size": 16}
+label_fontdict = {"family": "sans-serif", "weight": "normal", "size": 24}
 
-legend_label_fontdict = {"family": "sans-serif", "weight": "normal", "size": 14}
+legend_label_fontdict = {"family": "sans-serif", "weight": "normal", "size": 18}
 
-legend_title_fontdict = {"family": "sans-serif", "weight": "bold", "size": 18}
+legend_title_fontdict = {"family": "sans-serif", "weight": "bold", "size": 20}
+
+tick_size = 20
 
 
 def plot_test_graphs(
@@ -34,7 +36,7 @@ def plot_test_graphs(
         bin_max = bins[bin_index + 1]
         bins_intervals.append(f"[{bin_min} {param_unit}, {bin_max} {param_unit}]")
 
-        df_bin = df[(df["PREDICTION"] >= bin_min) & (df["PREDICTION"] < bin_max)].copy()
+        df_bin = df[(df["TRUE_VALUE"] >= bin_min) & (df["TRUE_VALUE"] < bin_max)].copy()
 
         sns.scatterplot(
             data=df_bin,
@@ -50,8 +52,8 @@ def plot_test_graphs(
 
     handles = [plot_handles(ax[0], "s", colors[i]) for i in range(len(bins_intervals))]
 
-    min_lim_x = round_to_1(bins[0] - (bins[-1] - bins[0]) * 0.05)
-    max_lim_x = round_to_1(bins[-1] + (bins[-1] - bins[0]) * 0.05)
+    min_lim_x = round_to_n(bins[0] - (bins[-1] - bins[0]) * 0.05, 1)
+    max_lim_x = round_to_n(bins[-1] + (bins[-1] - bins[0]) * 0.05, 1)
 
     ax[0].plot(
         [min_lim_x, max_lim_x],
@@ -66,13 +68,15 @@ def plot_test_graphs(
         ax=ax[0],
         x_limits=[min_lim_x, max_lim_x],
         y_limits=[min_lim_x, max_lim_x],
-        n_ticks=n_ticks,
+        x_n_ticks=n_ticks,
+        y_n_ticks=n_ticks,
         x_label=f"Predicted {param_string}",
         y_label=f"True {param_string}",
+        grid=True,
     )
 
-    min_lim_x = round_to_1(-(df["ERROR"].abs().median() * 20))
-    max_lim_x = round_to_1((df["ERROR"].abs().median() * 20))
+    min_lim_x = round_to_n(-(df["ERROR"].abs().median() * 20), 1)
+    max_lim_x = round_to_n((df["ERROR"].abs().median() * 20), 1)
 
     min_lim_y = 0
 
@@ -89,9 +93,11 @@ def plot_test_graphs(
         ax=ax[1],
         x_limits=[min_lim_x, max_lim_x],
         y_limits=[min_lim_y, max_lim_y],
-        n_ticks=n_ticks,
+        x_n_ticks=n_ticks,
+        y_n_ticks=n_ticks,
         x_label="Error",
         y_label="Density",
+        grid=True,
     )
 
     ax[1].tick_params(axis="y", which="both", left=False, right=False, labelleft=False)
@@ -116,27 +122,95 @@ def plot_test_graphs(
     return fig
 
 
-def beautify_graph(ax, x_limits, y_limits, n_ticks, x_label, y_label):
+def plot_comparison_graph(
+    results, metric, error, cmap_name, param_unit, n_ticks, legend
+):
+    fig = plt.figure(figsize=(3 * len(results[next(iter(results))]), 5))
+    ax = fig.add_axes([0, 0, 1, 1])
+
+    n_bars = len(results)
+    bar_width = (1 - 1 / n_bars) / n_bars
+
+    hatches = [""] * int(n_bars / 2) + ["/"] * int(n_bars / 2)
+    paddings = np.arange(0, n_bars * bar_width, bar_width) - (
+        bar_width / 2 * (n_bars - 1)
+    )
+    colors = mpl.colormaps[cmap_name](np.linspace(0.25, 0.75, n_bars))
+
+    for index, key in enumerate(results):
+        ax.bar(
+            x=results[key].index + paddings[index],
+            height=results[key][metric],
+            yerr=results[key][error],
+            width=bar_width,
+            color=colors[index],
+            hatch=hatches[index],
+            edgecolor="k",
+            linewidth=2.5,
+            capsize=5,
+            error_kw={"elinewidth": 3},
+            label=key,
+            zorder=2,
+        )
+
+    min_lim_y = 0
+    max_lim_y = max([(x[metric] + x[error]).max() for x in list(results.values())])
+
+    ax = beautify_graph(
+        ax=ax,
+        x_limits=None,
+        y_limits=[min_lim_y, round_to_n(max_lim_y + (max_lim_y - min_lim_y) * 0.1, 2)],
+        x_n_ticks=None,
+        y_n_ticks=n_ticks,
+        x_label="Parameter Interval",
+        y_label=f"MAD ({param_unit})",
+    )
+
+    ax.set_xticks(ticks=results[key].index, labels=results[key]["bin"])
+
+    ax.grid(axis="y", zorder=0)
+
+    if legend:
+        leg = ax.legend(
+            title="Features",
+            title_fontproperties=legend_title_fontdict,
+            prop=legend_label_fontdict,
+            framealpha=1,
+            handlelength=3,
+            handleheight=1.5,
+            borderpad=1,
+            bbox_to_anchor=(1.01, 1),
+        )
+
+        leg._legend_box.sep = 20
+
+    return fig
+
+
+def beautify_graph(
+    ax, x_limits, y_limits, x_n_ticks, y_n_ticks, x_label, y_label, grid=None
+):
     if x_limits:
         ax.set_xlim(x_limits[0], x_limits[1])
-        ax.set_xticks(np.linspace(x_limits[0], x_limits[1], n_ticks))
+        ax.set_xticks(np.linspace(x_limits[0], x_limits[1], x_n_ticks))
 
     if y_limits:
         ax.set_ylim(y_limits[0], y_limits[1])
-        ax.set_yticks(np.linspace(y_limits[0], y_limits[1], n_ticks))
+        ax.set_yticks(np.linspace(y_limits[0], y_limits[1], y_n_ticks))
 
-    ax.tick_params(labelsize=14)
+    ax.tick_params(labelsize=tick_size)
 
     ax.set_xlabel(x_label, fontdict=label_fontdict, labelpad=15)
     ax.set_ylabel(y_label, fontdict=label_fontdict, labelpad=15)
 
-    ax.grid(zorder=0)
+    if grid:
+        ax.grid(zorder=0)
 
     return ax
 
 
-def round_to_1(x):
-    return round(x, -int(floor(log10(abs(x)))))
+def round_to_n(x, n):
+    return round(x, -int(floor(log10(abs(x)))) + n - 1)
 
 
 def plot_handles(ax, m, c):

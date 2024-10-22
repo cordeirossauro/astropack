@@ -19,7 +19,7 @@ def calculate_mad(predictions, true_values, bins, param_unit):
         bin_max = bins[bin_index + 1]
         bins_intervals.append(f"[{bin_min} {param_unit}, {bin_max} {param_unit}]")
 
-        df_bin = df[(df["PREDICTION"] >= bin_min) & (df["PREDICTION"] < bin_max)].copy()
+        df_bin = df[(df["TRUE_VALUE"] >= bin_min) & (df["TRUE_VALUE"] < bin_max)].copy()
         bins_sizes.append(df_bin.shape[0])
 
         errors = df_bin["PREDICTION"] - df_bin["TRUE_VALUE"]

@@ -66,7 +66,7 @@ def create_combinations(df, filters):
 
 
 def assemble_work_df(
-    df, filters, correction_pairs, add_colors=False, add_combinations=False
+    df, filters, correction_pairs, add_colors=False, add_combinations=False, verbose=True
 ):
     """
     Assemble a dataframe with a set of magnitudes and, when asked, colors and color combinations.
@@ -81,38 +81,49 @@ def assemble_work_df(
     add_combinations - If True all the possible color combinations will be added to the returned dataframe
     """
 
-    print("Iniciando processo de criação do dataframe de trabalho:\n")
+    if verbose:
+        print("Iniciando processo de criação do dataframe de trabalho:\n")
 
     # If a dictionary of corrections is passed, apply the corrections to the magnitudes
     if correction_pairs:
-        print("  - Aplicando correção de magnitudes...", end="")
+        if verbose:
+            print("  - Aplicando correção de magnitudes...", end="")
 
         start_time = time.time()
         df = correct_magnitudes(df, correction_pairs)
-        print(f" Tempo: {(time.time() - start_time):.2f} s")
+
+        if verbose:
+            print(f" Tempo: {(time.time() - start_time):.2f} s")
 
     # Filter the df to get only the filters passed
     work_df = df[filters].copy()
 
     # If asked for, create a dataframe with all the possible colors and add it to the work dataframe
     if add_colors is True:
-        print("  - Adicionando cores ao dataframe...", end="")
+        if verbose:
+            print("  - Adicionando cores ao dataframe...", end="")
 
         start_time = time.time()
         colors_df = create_colors(work_df, filters)
         work_df = pd.concat([work_df, colors_df], axis=1)
-        print(f" Tempo: {(time.time() - start_time):.2f} s")
+
+        if verbose:
+            print(f" Tempo: {(time.time() - start_time):.2f} s")
 
     # If asked for, create a dataframe with all the possible color combinations and add it to the work dataframe
     if add_combinations is True:
-        print("  - Adicionando combinações de cores ao dataframe...", end="")
+        if verbose:
+            print("  - Adicionando combinações de cores ao dataframe...", end="")
 
         start_time = time.time()
         combinations_df = create_combinations(work_df, filters)
         work_df = pd.concat([work_df, combinations_df], axis=1)
-        print(f" Tempo: {(time.time() - start_time):.2f} s")
 
-    print(f"\nProcesso finalizado! Shape da Tabela Gerada: {work_df.shape}")
+        if verbose:
+            print(f" Tempo: {(time.time() - start_time):.2f} s")
+
+    if verbose:
+        print(f"\nProcesso finalizado! Shape da Tabela Gerada: {work_df.shape}")
 
     # Return the resulting dataframe
     return work_df
