@@ -19,7 +19,7 @@ class Predictor:
     def predict_parameters(self, args):
         input_data, output_path, keep_cols, save_mode, header = args
 
-        if input_data.isinstance(str):
+        if isinstance(input_data, str):
             input_data = pd.read_csv(input_data)
 
         if self.dist_col:
